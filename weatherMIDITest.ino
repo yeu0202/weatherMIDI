@@ -128,9 +128,9 @@ void loop() {
   val6 = map(barometricSensorValue, 99900, 102000, 0, 255);
 
   // if we get a valid byte, read analog ins:
- if (Serial.available() > 0) {
+ if (Serial.available() > 0) { // we probably don't need this but I'll keep it in anyways
    // get incoming byte:
-   inByte = Serial.read();
+   inByte = Serial.read(); // I have no idea why we need this, seems to work without but I'll keep it in incase it actually does something
    // send sensor values
    Serial.write(val1);
    Serial.write(val2);
