@@ -5,12 +5,13 @@
  */
 
 #include <SoftwareSerial.h>
+#include "Arduino_SensorKit.h"
 
 // Serial setup
-SoftwareSerial mySerial(2, 3); // RX, TX. Connect the MIDI lead to pin 3
+SoftwareSerial mySerial(8, 9); // RX, TX. Connect the MIDI lead to pin 9
 
 // Variables to contain the sensor values. 
-int windSensorValue = 50; // 0-1023
+int windSensorValue = 0; // 0-1023
 float temperatureSensorInValue = 25.5; // -10 - 40
 float temperatureSensorOutValue = 25.5; // -10 - 40
 float humiditySensorValue = 80.0; // 0-100
@@ -45,10 +46,22 @@ void flushAllNotes(){
   }
 }
 
+// Group 1 variables
+int light_sensor = A3;
+#define DHTPIN 3
+float pressure;
+
+
+
 
 void setup() {
   // change to midi baud range
   Serial.begin(9600);
+
+  // Group 1 Sensors initialization
+  Environment.begin();  
+  Pressure.begin();
+
 
   // MIDI serial speed
   mySerial.begin(31250);
@@ -70,18 +83,36 @@ void setup() {
 }
 
 void loop() {
+/*
+ * Wind sensor pin - A1
+ * Light sensor pin - A3
+ * Temperature and Humidity - Digital pin 3
+ * Barometric and temperature  - Digital pin ?
+ * 
+ */
+  
   // read the sensor values here 
-  windSensorValue = 50; // 0-1023
-  temperatureSensorInValue = 25.5; // -10 - 40
-  temperatureSensorOutValue = 25.5; // -10 - 40
-  humiditySensorValue = 80.0; // 0-100
-  lightSensorValue = 500; // 0 - 1023
-  barometricSensorValue = 50; // Can also keep track of barometric data history, to see in what way is it changing. Also might not need to retrieve every loop
+  windSensorValue = analogRead(A1); // 0-200
+  temperatureSensorInValue = Pressure.readTemperature(); // -10 - 40
+  temperatureSensorOutValue = Environment.readTemperature(); // -10 - 40
+  humiditySensorValue = Environment.readHumidity(); // 0-100
+  lightSensorValue = analogRead(light_sensor); // 0 - 1023
+  barometricSensorValue = Pressure.readPressure(); // Can also keep track of barometric data history, to see in what way is it changing. Also might not need to retrieve every loop
+  // 99900 - 102000
+
 
 
   // Need to implement sending serial messages out to the computer for the image/video group. 
   // I suggest mapping all the sensor data as was done for MIDI then send it all in a big array format, like 532, 123, 453, 620, 385, 205
   int val1 = 1, val2 = 2, val3 = 3, val4 = 4, val5 = 5, val6 = 6;
+
+  val1 = map(windSensorValue, 0, 200, 0, 255);
+  val2 = map(temperatureSensorInValue, -10, 40, 0, 255);
+  val3 = map(temperatureSensorOutValue, -10, 40, 0, 255);
+  val4 = map(humiditySensorValue, 0, 100, 0, 255);
+  val5 = map(lightSensorValue, 0, 1023, 0, 255);
+  val6 = map(barometricSensorValue, 99900, 102000, 0, 255);
+  
   String serialOutput;
   serialOutput = String(serialOutput + val1 + ", ");
   serialOutput = String(serialOutput + val2 + ", ");
@@ -94,13 +125,12 @@ void loop() {
   
 
   // map can only output integer values, always floors the values. Output is inclusive of minimum, exclusive of maximum. Floors the values within a range
-  float windValue = map(windSensorValue, 0, 1023, 200, 1500); // between 0.2-1.5, this is the delay in milliseconds
-//  windValue /= 1000; // do this to get around map only outputting integer values
+  float windValue = map(windSensorValue, 0, 200, 200, 1500); // between 0.2-1.5, this is the delay in milliseconds
   int temperatureInValue = round(map(temperatureSensorInValue, -10, 40, 0, 127)); // release of note, between 0, 127
   int temperatureOutValue = round(map(temperatureSensorOutValue, -10, 40, 0, 3)); // map to 0/1/2
   int humidityValue = round(map(humiditySensorValue, 0, 100, 0, 60)); // map to attack, 0, ~60
   int lightValue = round(map(lightSensorValue, 0, 1023, 0, 3)); // map to 0/1/2
-  int barometricValue = round(map(barometricSensorValue, 0, 1023, 1, 3)); // map to 1/2
+  int barometricValue = round(map(barometricSensorValue, 99900, 102000, 1, 3)); // map to 1/2
 
 
   // Need to implement changing instrument/filter cutoff based on temperatureOutValue, do this by sending a different MIDI cc message based on temperatureOutValue
@@ -128,7 +158,9 @@ void loop() {
   randNumber = random(5);
   int playingNote = allTheNotes[lightValue][randNumber]; // this is the base note to play
   // Need to implement the shifting of notes based on barometricValue, increase or decrease notes by 12 then play them again
-  
+  if(barometricValue == 2){
+    playingNote = playingNote + 12;
+  }
 
   // Do noteOn, do noteOff before every note to make sure it is reset (not sure if required)
   sendMIDIMessage(0x90, playingNote, 0x45); // maximum is 7F, but 45 is ok. You can also use 0-127 fo the 3rd value
