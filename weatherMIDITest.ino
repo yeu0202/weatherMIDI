@@ -46,12 +46,22 @@ void flushAllNotes(){
   }
 }
 
+
 // Group 1 variables
 int light_sensor = A3;
 #define DHTPIN 3
-float pressure;
+//float pressure;
 
 
+// Group 4 function and variables
+int inByte = 0;   // incoming serial byte
+
+void establishContact() {
+ while (Serial.available() <= 0) {
+ Serial.print('A'); // send a capital A
+ delay(300);
+ }
+}
 
 
 void setup() {
@@ -80,6 +90,10 @@ void setup() {
     allTheNotes[1][j] = minorNotes[j];
     allTheNotes[2][j] = locrianNotes[j];
   }
+
+
+  // Group 4 processing required code
+  establishContact(); // send a byte to establish contact until receiver responds
 }
 
 void loop() {
@@ -112,15 +126,28 @@ void loop() {
   val4 = map(humiditySensorValue, 0, 100, 0, 255);
   val5 = map(lightSensorValue, 0, 1023, 0, 255);
   val6 = map(barometricSensorValue, 99900, 102000, 0, 255);
+
+  // if we get a valid byte, read analog ins:
+ if (Serial.available() > 0) {
+   // get incoming byte:
+   inByte = Serial.read();
+   // send sensor values
+   Serial.write(val1);
+   Serial.write(val2);
+   Serial.write(val3);
+   Serial.write(val4);
+   Serial.write(val5);
+   Serial.write(val6);
+ }
   
-  String serialOutput;
-  serialOutput = String(serialOutput + val1 + ", ");
-  serialOutput = String(serialOutput + val2 + ", ");
-  serialOutput = String(serialOutput + val3 + ", ");
-  serialOutput = String(serialOutput + val4 + ", ");
-  serialOutput = String(serialOutput + val5 + ", ");
-  serialOutput = String(serialOutput + val6);
-  Serial.println(serialOutput);
+//  String serialOutput;
+//  serialOutput = String(serialOutput + val1 + ", ");
+//  serialOutput = String(serialOutput + val2 + ", ");
+//  serialOutput = String(serialOutput + val3 + ", ");
+//  serialOutput = String(serialOutput + val4 + ", ");
+//  serialOutput = String(serialOutput + val5 + ", ");
+//  serialOutput = String(serialOutput + val6);
+//  Serial.println(serialOutput);
 
   
 
