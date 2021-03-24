@@ -19,7 +19,7 @@ int lightSensorValue = 500; // 0 - 1023
 float barometricSensorValue = 50; // Can also keep track of barometric data history, to see in what way is it changing. Also might not need to retrieve every loop
 
 // cc repeat check variables
-int cutoffOld = 0;
+int instrumentOld = 0;
 int attackOld = 0;
 int releaseOld = 0;
 
@@ -161,9 +161,23 @@ void loop() {
 
 
   // Need to implement changing instrument/filter cutoff based on temperatureOutValue, do this by sending a different MIDI cc message based on temperatureOutValue
-  if(temperatureOutValue != cutoffOld){
-    sendMIDIMessage(0xB0, 74, temperatureOutValue);
-    cutoffOld = temperatureOutValue;
+  if(temperatureOutValue != instrumentOld){
+    if(temperatureOutValue == 0){
+      sendMIDIMessage(0xB0, 75, 127);
+      sendMIDIMessage(0xB0, 76, 0);
+      sendMIDIMessage(0xB0, 77, 0);
+    }
+    if(temperatureOutValue == 1){
+      sendMIDIMessage(0xB0, 75, 0);
+      sendMIDIMessage(0xB0, 76, 127);
+      sendMIDIMessage(0xB0, 77, 0);
+    }
+    if(temperatureOutValue == 2){
+      sendMIDIMessage(0xB0, 75, 0);
+      sendMIDIMessage(0xB0, 76, 0);
+      sendMIDIMessage(0xB0, 77, 127);
+    }
+    instrumentOld = temperatureOutValue;
   }
   
   // Need to implement changing a MIDI cc message based on humidity, whether it changes Attack/Reverb depends on group 3
