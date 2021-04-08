@@ -131,6 +131,9 @@ void loop() {
  if (Serial.available() > 0) { // we probably don't need this but I'll keep it in anyways
    // get incoming byte:
    inByte = Serial.read(); // I have no idea why we need this, seems to work without but I'll keep it in incase it actually does something
+   // ok now I think I understand what it does, arduino code MUST run slower than the processing code otherwise stuff might break
+   // on the processing end. There is a delay from the wind sensor which is 200 ms at minimum so that should be enough
+   
    // send sensor values
    Serial.write(val1);
    Serial.write(val2);
